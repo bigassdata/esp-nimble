@@ -889,7 +889,7 @@ struct config_t {
     list_t *sections;
 };
 
-char *osi_strdup(const char *str)
+static char *osi_strdup(const char *str)
 {
     size_t size = strlen(str) + 1;  // + 1 for the null terminator
     char *new_string = (char *)osi_calloc(size);
@@ -928,7 +928,7 @@ typedef struct config_t config_t;
 
 static config_t *config;
 
-list_t *list_new_internal(list_free_cb callback)
+static list_t *list_new_internal(list_free_cb callback)
 {
     list_t *list = (list_t *) osi_calloc(sizeof(list_t));
     if (!list) {
@@ -941,12 +941,12 @@ list_t *list_new_internal(list_free_cb callback)
     return list;
 }
 
-list_t *list_new(list_free_cb callback)
+static list_t *list_new(list_free_cb callback)
 {
     return list_new_internal(callback);
 }
 
-list_node_t *list_free_node(list_t *list, list_node_t *node)
+static list_node_t *list_free_node(list_t *list, list_node_t *node)
 {
     assert(list != NULL);
     assert(node != NULL);
@@ -963,7 +963,7 @@ list_node_t *list_free_node(list_t *list, list_node_t *node)
 }
 
 
-void list_clear(list_t *list)
+static void list_clear(list_t *list)
 {
     assert(list != NULL);
     for (list_node_t *node = list->head; node; ) {
@@ -974,7 +974,7 @@ void list_clear(list_t *list)
     list->length = 0;
 }
 
-void list_free(list_t *list)
+static void list_free(list_t *list)
 {
     if (!list) {
         return;
@@ -984,31 +984,31 @@ void list_free(list_t *list)
     osi_free(list);
 }
 
-list_node_t *list_begin(const list_t *list)
+static list_node_t *list_begin(const list_t *list)
 {
     assert(list != NULL);
     return list->head;
 }
 
-list_node_t *list_end(const list_t *list)
+static list_node_t *list_end(const list_t *list)
 {
     assert(list != NULL);
     return NULL;
 }
 
-list_node_t *list_next(const list_node_t *node)
+static list_node_t *list_next(const list_node_t *node)
 {
     assert(node != NULL);
     return node->next;
 }
 
-void *list_node(const list_node_t *node)
+static void *list_node(const list_node_t *node)
 {
     assert(node != NULL);
     return node->data;
 }
 
-bool list_prepend(list_t *list, void *data)
+static bool list_prepend(list_t *list, void *data)
 {
     assert(list != NULL);
     assert(data != NULL);
@@ -1027,7 +1027,7 @@ bool list_prepend(list_t *list, void *data)
     return true;
 }
 
-bool list_append(list_t *list, void *data)
+static bool list_append(list_t *list, void *data)
 {
     assert(list != NULL);
     assert(data != NULL);
