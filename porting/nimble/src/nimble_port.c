@@ -22,6 +22,9 @@
 #include "sysinit/sysinit.h"
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
 #if NIMBLE_CFG_CONTROLLER
 #include "controller/ble_ll.h"
 #endif
@@ -76,11 +79,22 @@ nimble_port_run(void)
 {
     struct ble_npl_event *ev;
 
+    TaskHandle_t taskHandle = xTaskGetCurrentTaskHandle();
+    UBaseType_t stackHighWaterMark;
+    char * taskName = pcTaskGetTaskName(taskHandle);
+    uint16_t counter = 0;
+
     while (1) {
         ev = ble_npl_eventq_get(&g_eventq_dflt, BLE_NPL_TIME_FOREVER);
         ble_npl_event_run(ev);
         if (ev == &ble_hs_ev_stop) {
             break;
+        }
+        if (++counter == 10000)
+        {
+            stackHighWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
+            ESP_LOGI("FreeRTOS", "%s stack high water mark: %u", taskName, stackHighWaterMark);
+            counter = 0;
         }
     }
 }

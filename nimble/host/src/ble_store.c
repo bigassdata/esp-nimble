@@ -351,7 +351,7 @@ ble_store_iterate(int obj_type,
             pidx = &key.cccd.idx;
             break;
         default:
-            BLE_HS_DBG_ASSERT(0);
+            // BLE_HS_DBG_ASSERT(0);
             return BLE_HS_EINVAL;
     }
 

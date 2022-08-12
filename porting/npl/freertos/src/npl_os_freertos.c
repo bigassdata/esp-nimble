@@ -22,6 +22,9 @@
 #include <string.h>
 #include "nimble/nimble_npl.h"
 #include "freertos/portable.h"
+#include "esp_log.h"
+
+static uint8_t mHighWatermark;
 
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 
@@ -62,6 +65,7 @@ npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_event *ev)
 {
     BaseType_t woken;
     BaseType_t ret;
+    UBaseType_t waterMark;
 
     if (ev->queued) {
         return;
@@ -71,11 +75,25 @@ npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_event *ev)
 
     if (in_isr()) {
         ret = xQueueSendToBackFromISR(evq->q, &ev, &woken);
+        waterMark = uxQueueMessagesWaitingFromISR(evq->q);
         if( woken == pdTRUE ) {
             portYIELD_FROM_ISR();
         }
     } else {
         ret = xQueueSendToBack(evq->q, &ev, portMAX_DELAY);
+        waterMark = uxQueueMessagesWaiting(evq->q);
+    }
+
+    if (waterMark > mHighWatermark)
+    {
+        mHighWatermark = waterMark;
+        ESP_LOGI("FreeRTOS", "Most events in queue so far: %u", 
+                 mHighWatermark);
+    }
+
+    if (waterMark == 32)
+    {
+        ESP_LOGE("FreeRTOS", "Reached max queue size of 32");
     }
 
     assert(ret == pdPASS);
