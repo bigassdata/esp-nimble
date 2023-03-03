@@ -17,27 +17,38 @@
  * under the License.
  */
 
-#include "os/os.h"
+#ifndef BLE_TGT_STRESS_GATT_H
+#define BLE_TGT_STRESS_GATT_H
+
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include "host/ble_hs.h"
+#include "host/ble_uuid.h"
 #include "nimble/ble.h"
+#include "modlog/modlog.h"
+#include "misc.h"
 
-/**
- * Converts an OS error code to its equivalent BLE_ERR code.
- *
- * @param os_err                The OS error code to convert.
- *
- * @return                      The equivalent BLE_ERR code.
- */
-int
-ble_err_from_os(int os_err)
-{
-    switch (os_err) {
-    case 0:
-        return 0;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    case OS_ENOMEM:
-        return BLE_ERR_MEM_CAPACITY;
+extern uint16_t hrs_hrm_handle;
 
-    default:
-        return BLE_ERR_UNSPECIFIED;
-    }
+/* Heart-rate configuration */
+#define STRESS_GATT_UUID                     0xC0DE
+#define STRESS_GATT_READ_UUID                0xC1DE
+#define STRESS_GATT_WRITE_UUID               0xC2DE
+#define STRESS_GATT_INDICATE_UUID            0xC3DE
+#define STRESS_GATT_NOTIFY_UUID              0xC4DE
+
+int gatt_svr_init(void);
+
+void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
+
+#ifdef __cplusplus
 }
+#endif
+
+
+#endif //BLE_TGT_STRESS_GATT_H

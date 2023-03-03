@@ -22,8 +22,11 @@
 #include <string.h>
 #include "nimble/nimble_npl.h"
 #include "freertos/portable.h"
+#include "esp_log.h"
 
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
+
+static const char *TAG = "Timer";
 
 static inline bool
 in_isr(void)
@@ -292,6 +295,38 @@ npl_freertos_sem_release(struct ble_npl_sem *sem)
     return BLE_NPL_OK;
 }
 
+
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+static void
+ble_npl_event_fn_wrapper(void *arg)
+{
+    struct ble_npl_callout *co = (struct ble_npl_callout *)arg;
+
+    if (co->evq) {
+        ble_npl_eventq_put(co->evq, &co->ev);
+    } else {
+        co->ev.fn(&co->ev);
+    }
+}
+
+static
+ble_npl_error_t esp_err_to_npl_error(esp_err_t err)
+{
+    switch(err) {
+    case ESP_ERR_INVALID_ARG:
+        return BLE_NPL_INVALID_PARAM;
+
+    case ESP_ERR_INVALID_STATE:
+        return BLE_NPL_EINVAL;
+
+    case ESP_OK:
+        return BLE_NPL_OK;
+
+    default:
+        return BLE_NPL_ERROR;
+    }
+}
+#else
 static void
 os_callout_timer_cb(TimerHandle_t timer)
 {
@@ -306,15 +341,47 @@ os_callout_timer_cb(TimerHandle_t timer)
         co->ev.fn(&co->ev);
     }
 }
+#endif
 
 void
 npl_freertos_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
                      ble_npl_event_fn *ev_cb, void *ev_arg)
 {
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+    co->ev.fn = ev_cb;
+    co->ev.arg = ev_arg;
+    co->evq = evq;
+
+    esp_timer_create_args_t create_args = {
+      .callback = ble_npl_event_fn_wrapper,
+      .arg = co,
+      .name = "nimble_timer"
+    };
+
+    ESP_ERROR_CHECK(esp_timer_create(&create_args, &co->handle));
+#else
     memset(co, 0, sizeof(*co));
     co->handle = xTimerCreate("co", 1, pdFALSE, co, os_callout_timer_cb);
     co->evq = evq;
     ble_npl_event_init(&co->ev, ev_cb, ev_arg);
+#endif
+}
+
+void
+npl_freertos_callout_deinit(struct ble_npl_callout *co)
+{
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+    if(esp_timer_stop(co->handle))
+	ESP_LOGD(TAG, "Timer not stopped");
+
+    if(esp_timer_delete(co->handle))
+	ESP_LOGW(TAG, "Timer not deleted");
+#else
+    if (co->handle) {
+        xTimerDelete(co->handle, portMAX_DELAY);
+    }
+#endif
+    memset(co, 0, sizeof(struct ble_npl_callout));
 }
 void
 npl_freertos_callout_deinit(struct ble_npl_callout *co)
@@ -327,6 +394,12 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 ble_npl_error_t
 npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t ticks)
 {
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+    esp_timer_stop(co->handle);
+
+    return esp_err_to_npl_error(esp_timer_start_once(co->handle, ticks*1000));
+#else
+
     BaseType_t woken1, woken2, woken3;
 
     if (ticks == 0) {
@@ -348,6 +421,45 @@ npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t ticks)
     }
 
     return BLE_NPL_OK;
+#endif
+}
+
+void
+npl_freertos_callout_stop(struct ble_npl_callout *co)
+{
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+    esp_timer_stop(co->handle);
+#else
+    xTimerStop(co->handle, portMAX_DELAY);
+#endif
+}
+
+bool
+npl_freertos_callout_is_active(struct ble_npl_callout *co)
+{
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+    return esp_timer_is_active(co->handle);
+#else
+    return xTimerIsTimerActive(co->handle) == pdTRUE;
+#endif
+}
+
+ble_npl_time_t
+npl_freertos_callout_get_ticks(struct ble_npl_callout *co)
+{
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+   /* Currently, esp_timer does not support an API which gets the expiry time for
+    * current timer.
+    * Returning 0 from here should not cause any effect.
+    * Drawback of this approach is that existing code to reset timer would be called
+    * more often (since the if condition to invoke reset timer would always succeed if
+    * timer is active).
+    */
+
+    return 0;
+#else
+    return xTimerGetExpiryTime(co->handle);
+#endif
 }
 
 ble_npl_time_t
@@ -355,9 +467,30 @@ npl_freertos_callout_remaining_ticks(struct ble_npl_callout *co,
                                      ble_npl_time_t now)
 {
     ble_npl_time_t rt;
-    uint32_t exp;
+    uint32_t exp = 0;
 
+#if CONFIG_BT_NIMBLE_USE_ESP_TIMER
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    uint64_t expiry = 0;
+    esp_err_t err;
+
+    //Fetch expiry time in microseconds
+    err = esp_timer_get_expiry_time((esp_timer_handle_t)(co->handle), &expiry);
+    if (err != ESP_OK) {
+        //Error. Could not fetch the expiry time
+        return 0;
+    }
+
+    //Convert microseconds to ticks
+    npl_freertos_time_ms_to_ticks((uint32_t)(expiry / 1000), &exp);
+#else
+    //esp_timer_get_expiry_time() is only available from IDF 5.0 onwards
+    //Set expiry to 0
+    exp = 0;
+#endif //ESP_IDF_VERSION
+#else
     exp = xTimerGetExpiryTime(co->handle);
+#endif
 
     if (exp > now) {
         rt = exp - now;

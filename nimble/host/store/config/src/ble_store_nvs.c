@@ -640,7 +640,6 @@ void ble_store_config_conf_init(void)
     if (err != 0) {
         ESP_LOGE(TAG, "NVS operation failed, can't retrieve the bonding info");
     }
-
 #if MYNEWT_VAL(BLE_HOST_BASED_PRIVACY)
     err = ble_nvs_restore_peer_records();
     if (err != 0) {

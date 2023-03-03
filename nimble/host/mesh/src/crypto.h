@@ -70,7 +70,7 @@ static inline int bt_mesh_beacon_key(const u8_t net_key[16],
 }
 
 int bt_mesh_beacon_auth(const u8_t beacon_key[16], u8_t flags,
-			const u8_t net_id[16], u32_t iv_index,
+			const u8_t net_id[8], u32_t iv_index,
 			u8_t auth[8]);
 
 static inline int bt_mesh_app_id(const u8_t app_key[16], u8_t app_id[1])
@@ -131,9 +131,17 @@ int bt_mesh_net_encrypt(const u8_t key[16], struct os_mbuf *buf,
 int bt_mesh_net_decrypt(const u8_t key[16], struct os_mbuf *buf,
 			u32_t iv_index, bool proxy);
 
+int bt_mesh_app_encrypt_in_place(const u8_t key[16], bool dev_key, u8_t aszmic,
+				 struct os_mbuf*buf, const u8_t *ad, u16_t src,
+				 u16_t dst, u32_t seq_num, u32_t iv_index);
+
 int bt_mesh_app_encrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
 			struct os_mbuf*buf, const u8_t *ad,
 			u16_t src, u16_t dst, u32_t seq_num, u32_t iv_index);
+
+int bt_mesh_app_decrypt_in_place(const u8_t key[16], bool dev_key, u8_t aszmic,
+				 struct os_mbuf *buf, const u8_t *ad, u16_t src,
+				 u16_t dst, u32_t seq_num, u32_t iv_index);
 
 int bt_mesh_app_decrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
 			struct os_mbuf*buf, struct os_mbuf*out,
@@ -157,4 +165,6 @@ int bt_mesh_prov_conf(const u8_t conf_key[16], const u8_t rand[16],
 int bt_mesh_prov_decrypt(const u8_t key[16], u8_t nonce[13],
 			 const u8_t data[25 + 8], u8_t out[25]);
 
+int bt_mesh_prov_encrypt(const u8_t key[16], u8_t nonce[13],
+			 const u8_t data[25], u8_t out[25 + 8]);
 #endif

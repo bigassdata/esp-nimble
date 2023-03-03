@@ -17,32 +17,38 @@
  * under the License.
  */
 
-#ifndef H_BLE_LL_XCVR_
-#define H_BLE_LL_XCVR_
+#ifndef BLE_TGT_MISC_H
+#define BLE_TGT_MISC_H
+
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include "host/ble_hs.h"
+#include "host/ble_uuid.h"
+#include "host/ble_hs_adv.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef BLE_XCVR_RFCLK
+void rand_bytes(uint8_t *data, int len);
 
-/* RF clock states */
-#define BLE_RFCLK_STATE_OFF     (0)
-#define BLE_RFCLK_STATE_ON      (1)
-#define BLE_RFCLK_STATE_SETTLED (2)
+void print_bytes(const uint8_t *bytes, int len);
 
-int ble_ll_xcvr_rfclk_state(void);
-void ble_ll_xcvr_rfclk_start_now(uint32_t now);
-void ble_ll_xcvr_rfclk_stop(void);
-void ble_ll_xcvr_rfclk_enable(void);
-void ble_ll_xcvr_rfclk_disable(void);
-uint32_t ble_ll_xcvr_rfclk_time_till_settled(void);
-void ble_ll_xcvr_rfclk_timer_exp(void *arg);
-void ble_ll_xcvr_rfclk_timer_start(uint32_t cputime);
-#endif
+void print_addr(const void *addr);
+
+void print_mbuf(const struct os_mbuf *om);
+
+char *addr_str(const void *addr);
+
+void print_uuid(const ble_uuid_t *uuid);
+
+void print_conn_desc(const struct ble_gap_conn_desc *desc);
+
+void print_adv_fields(const struct ble_hs_adv_fields *fields);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* H_LL_ */
+#endif //BLE_TGT_MISC_H

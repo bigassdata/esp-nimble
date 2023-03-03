@@ -17,18 +17,10 @@
  * under the License.
  */
 
-#ifndef H_BLE_HS_DBG_PRIV_
-#define H_BLE_HS_DBG_PRIV_
+#pragma message ( "This will probably not compile. Used to generate syscfg.h file and other artifacts." )
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void ble_hs_dbg_event_disp(uint8_t *evbuf);
-void ble_hs_dbg_set_sync_state(uint8_t sync_state);
-
-#ifdef __cplusplus
+int
+main(void)
+{
+    return 0;
 }
-#endif
-
-#endif /* H_HOST_DBG_ */

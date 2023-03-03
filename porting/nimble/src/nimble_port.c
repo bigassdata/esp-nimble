@@ -42,9 +42,6 @@ nimble_port_init(void)
 #if NIMBLE_CFG_CONTROLLER
     void ble_hci_ram_init(void);
 #endif
-#ifdef ESP_PLATFORM
-    esp_log_level_set("NimBLE", LOG_LOCAL_LEVEL);
-#endif
     /* Initialize default event queue */
     ble_npl_eventq_init(&g_eventq_dflt);
 
@@ -83,6 +80,20 @@ nimble_port_run(void)
             break;
         }
     }
+
+    /* Wait till the host stop procedure is complete */
+    ble_npl_sem_pend(&ble_hs_stop_sem, BLE_NPL_TIME_FOREVER);
+
+    ble_npl_event_init(&ble_hs_ev_stop, nimble_port_stop_cb,
+            NULL);
+    ble_npl_eventq_put(&g_eventq_dflt, &ble_hs_ev_stop);
+
+    /* Wait till the event is serviced */
+    ble_npl_sem_pend(&ble_hs_stop_sem, BLE_NPL_TIME_FOREVER);
+
+    ble_npl_sem_deinit(&ble_hs_stop_sem);
+
+    return rc;
 }
 
 /**
