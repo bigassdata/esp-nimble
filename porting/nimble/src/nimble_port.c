@@ -80,20 +80,6 @@ nimble_port_run(void)
             break;
         }
     }
-
-    /* Wait till the host stop procedure is complete */
-    ble_npl_sem_pend(&ble_hs_stop_sem, BLE_NPL_TIME_FOREVER);
-
-    ble_npl_event_init(&ble_hs_ev_stop, nimble_port_stop_cb,
-            NULL);
-    ble_npl_eventq_put(&g_eventq_dflt, &ble_hs_ev_stop);
-
-    /* Wait till the event is serviced */
-    ble_npl_sem_pend(&ble_hs_stop_sem, BLE_NPL_TIME_FOREVER);
-
-    ble_npl_sem_deinit(&ble_hs_stop_sem);
-
-    return rc;
 }
 
 /**

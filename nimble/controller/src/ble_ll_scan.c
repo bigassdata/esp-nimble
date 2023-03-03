@@ -1126,6 +1126,7 @@ ble_ll_scan_sm_stop(int chk_disable)
     os_cputime_timer_stop(&scansm->scan_timer);
 
     OS_ENTER_CRITICAL(sr);
+
     /* Disable scanning state machine */
     scansm->scan_enabled = 0;
     scansm->restart_timer_needed = 0;
@@ -1137,7 +1138,6 @@ ble_ll_scan_sm_stop(int chk_disable)
         scansm->ext_scanning = 0;
     }
 #endif
-    OS_EXIT_CRITICAL(sr);
 
     /* Update backoff if we failed to receive scan response */
     if (scansm->scan_rsp_pending) {

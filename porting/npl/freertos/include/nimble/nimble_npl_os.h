@@ -218,11 +218,6 @@ ble_npl_callout_init(struct ble_npl_callout *co, struct ble_npl_eventq *evq,
 {
     npl_freertos_callout_init(co, evq, ev_cb, ev_arg);
 }
-static inline void
-ble_npl_callout_deinit(struct ble_npl_callout *co)
-{
-    npl_freertos_callout_deinit(co);
-}
 
 static inline void
 ble_npl_callout_deinit(struct ble_npl_callout *co)

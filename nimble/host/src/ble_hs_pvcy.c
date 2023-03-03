@@ -120,14 +120,6 @@ ble_hs_pvcy_add_entry_hci(const uint8_t *addr, uint8_t addr_type,
     if (rc != 0) {
         return rc;
     }
-#if MYNEWT_VAL(BLE_HOST_BASED_PRIVACY)
-    rc = ble_hs_resolv_list_add(buf);
-    if (rc != 0) {
-        return rc;
-    }
-
-#else
-    ble_addr_t peer_addr;
 
 #else
     ble_addr_t peer_addr;

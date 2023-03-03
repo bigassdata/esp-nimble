@@ -383,13 +383,6 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
 #endif
     memset(co, 0, sizeof(struct ble_npl_callout));
 }
-void
-npl_freertos_callout_deinit(struct ble_npl_callout *co)
-{
-    if (co->handle) {
-        xTimerDelete(co->handle, portMAX_DELAY);
-    }
-}
 
 ble_npl_error_t
 npl_freertos_callout_reset(struct ble_npl_callout *co, ble_npl_time_t ticks)

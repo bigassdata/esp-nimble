@@ -31,12 +31,6 @@
 #include <stdarg.h>
 #endif
 
-#ifdef ESP_PLATFORM
-#include "esp_log.h"
-#include <stdio.h>
-#include <stdarg.h>
-#endif
-
 #define MODLOG_MODULE_DFLT 255
 
 #ifdef ESP_PLATFORM
@@ -94,8 +88,6 @@
     printf((ml_msg_), ##__VA_ARGS__)
 #else
 #define MODLOG_CRITICAL(ml_mod_, ...) IGNORE(__VA_ARGS__)
-#endif
-
 #endif
 
 #endif
