@@ -1325,6 +1325,18 @@ int ble_gap_ext_adv_remove(uint8_t instance);
  *                      other error code on failure.
  */
 int ble_gap_ext_adv_clear(void);
+
+/**
+ * Indicates whether an advertisement procedure is currently in progress on
+ * the specified Instance
+ *
+ * @param instance            Instance Id
+ *
+ * @return 0 if there is no active advertising procedure for the instance,
+ *         1 otherwise
+ *
+ */
+int ble_gap_ext_adv_active(uint8_t instance);
 #endif
 
 /* Periodic Advertising */
@@ -1799,6 +1811,13 @@ int ble_gap_wl_set(const ble_addr_t *addrs, uint8_t white_list_count);
  * @return                      0 on success; nonzero on failure.
  */
 int ble_gap_wl_tx_rmv(const ble_addr_t *addrs);
+
+/**
+ * Clears all addresses from controller's white list.
+ *
+ * @return                      0 on success; nonzero on failure.
+ */
+int ble_gap_wl_tx_clear(void);
 
 /**
  * Initiates a connection parameter update procedure.

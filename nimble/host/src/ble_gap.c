@@ -1386,6 +1386,16 @@ ble_gap_adv_active_instance(uint8_t instance)
     return ble_gap_slave[instance].op == BLE_GAP_OP_S_ADV;
 }
 
+#if MYNEWT_VAL(BLE_EXT_ADV)
+int ble_gap_ext_adv_active(uint8_t instance)
+{
+    if (instance >= BLE_ADV_INSTANCES) {
+        return 0;
+    }
+    return ble_gap_adv_active_instance(instance);
+}
+#endif
+
 /**
  * Clears advertisement and discovery state.  This function is necessary
  * when the controller loses its active state (e.g. on host stack reset).
@@ -2235,7 +2245,7 @@ ble_gap_wl_tx_add(const ble_addr_t *addr)
                              &cmd, sizeof(cmd), NULL, 0);
 }
 
-static int
+int
 ble_gap_wl_tx_clear(void)
 {
     return ble_hs_hci_cmd_tx(BLE_HCI_OP(BLE_HCI_OGF_LE,

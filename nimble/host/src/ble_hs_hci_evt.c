@@ -189,49 +189,60 @@ ble_hs_hci_evt_disconn_complete(uint8_t event_code, const void *data,
     ble_hs_unlock();
 
 #if CONFIG_BT_NIMBLE_ENABLE_CONN_REATTEMPT
-    int rc, i, idx;
+    if (ev->reason == BLE_ERR_CONN_ESTABLISHMENT) {
+        int rc, i, idx;
 
-    idx = ble_gap_find_reattempt_conn_idx(conn);
+        idx = ble_gap_find_reattempt_conn_idx(conn);
 
-    if (idx == MYNEWT_VAL(BLE_MAX_CONNECTIONS)) {
-        /* This means, no matching addr exists in databse. So create a new one */
-	for (i = 0; i < MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
-            if (reattempt_conn[i].count == 0) {
-                idx = i;
-		break;
+        if (idx == MYNEWT_VAL(BLE_MAX_CONNECTIONS)) {
+            /* This means, no matching addr exists in databse. So create a new one */
+	        for (i = 0; i < MYNEWT_VAL(BLE_MAX_CONNECTIONS); i++) {
+                    if (reattempt_conn[i].count == 0) {
+	                    idx = i;
+		            break;
+		    }
+	        }
+        }
+
+        if (idx == MYNEWT_VAL(BLE_MAX_CONNECTIONS)) {
+            BLE_HS_LOG(DEBUG, "No space left in array ");
+
+	    for (i = 0; i < idx; i++) {
+                 memset(&reattempt_conn[i], 0x0, sizeof(struct ble_gap_reattempt_ctxt));
 	    }
+            goto done;
         }
-    }
 
-    if (idx == MYNEWT_VAL(BLE_MAX_CONNECTIONS)) {
-       BLE_HS_LOG(DEBUG, "No space left in array ");
-       goto done;
-    }
+        if (conn != NULL) {
+            BLE_HS_LOG(DEBUG, "Reattempt connection; reason = 0x%x, status = %d,"
+                              "reattempt count = %d ", ev->reason, ev->status,
+                               reattempt_conn[idx].count);
+            if (conn->bhc_flags & BLE_HS_CONN_F_MASTER) {
+                if (reattempt_conn[idx].count < MAX_REATTEMPT_ALLOWED) {
+                    reattempt_conn[idx].count += 1;
 
-    if (ev->reason == BLE_ERR_CONN_ESTABLISHMENT && (conn != NULL)) {
-        BLE_HS_LOG(DEBUG, "Reattempt connection; reason = 0x%x, status = %d,"
-                          "reattempt count = %d ", ev->reason, ev->status,
-                           reattempt_conn[idx].count);
-        if (conn->bhc_flags & BLE_HS_CONN_F_MASTER) {
-            if (reattempt_conn[idx].count < MAX_REATTEMPT_ALLOWED) {
-                reattempt_conn[idx].count += 1;
-		memcpy(&reattempt_conn[idx].peer_addr, &conn->bhc_peer_addr, BLE_DEV_ADDR_LEN);
+		    for (i = 0; i < BLE_DEV_ADDR_LEN; i++) {
+		        reattempt_conn[idx].peer_addr.val[i] = conn->bhc_peer_addr.val[i];
+                    }
 
-                rc = ble_gap_master_connect_reattempt(ev->conn_handle);
-                if (rc != 0) {
-                    BLE_HS_LOG(DEBUG, "Master reconnect attempt failed; rc = %d", rc);
+		    reattempt_conn[idx].peer_addr.type = conn->bhc_peer_addr.type;
+
+                    rc = ble_gap_master_connect_reattempt(ev->conn_handle);
+                    if (rc != 0) {
+                        BLE_HS_LOG(DEBUG, "Master reconnect attempt failed; rc = %d", rc);
+                    }
+                } else {
+                    memset(&reattempt_conn[idx].peer_addr, 0x0, BLE_DEV_ADDR_LEN);
+                    reattempt_conn[idx].count = 0;
                 }
-            } else {
-                memset(&reattempt_conn[idx].peer_addr, 0x0, BLE_DEV_ADDR_LEN);
-                reattempt_conn[idx].count = 0;
             }
+        } else {
+            /* Disconnect completed with some other reason than
+            * BLE_ERR_CONN_ESTABLISHMENT, reset the corresponding reattempt count
+            * */
+            memset(&reattempt_conn[idx].peer_addr, 0x0, BLE_DEV_ADDR_LEN);
+            reattempt_conn[idx].count = 0;
         }
-    } else {
-        /* Disconnect completed with some other reason than
-         * BLE_ERR_CONN_ESTABLISHMENT, reset the corresponding reattempt count
-         * */
-        memset(&reattempt_conn[idx].peer_addr, 0x0, BLE_DEV_ADDR_LEN);
-        reattempt_conn[idx].count = 0;
     }
 done:
 
@@ -898,6 +909,18 @@ ble_hs_hci_evt_process(const struct ble_hci_ev *ev)
         STATS_INC(ble_hs_stats, hci_unknown_event);
         rc = BLE_HS_ENOTSUP;
     } else {
+#if !BLE_MONITOR
+	/* Ignore NOCP for debug */
+       if(ev->opcode != 0x13) {
+           BLE_HS_LOG(DEBUG, "ble_hs_event_rx_hci_ev; opcode=0x%x ", ev->opcode);
+
+	   /* For LE Meta, print subevent code */
+           if(ev->opcode == 0x3e)
+              BLE_HS_LOG(DEBUG, "subevent: 0x%x", ev->data[0]);
+
+           BLE_HS_LOG(DEBUG, "\n");
+        }
+#endif
         rc = entry->cb(ev->opcode, ev->data, ev->length);
     }
 
