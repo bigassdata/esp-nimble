@@ -441,15 +441,20 @@ ble_npl_time_t
 npl_freertos_callout_get_ticks(struct ble_npl_callout *co)
 {
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
-   /* Currently, esp_timer does not support an API which gets the expiry time for
-    * current timer.
-    * Returning 0 from here should not cause any effect.
-    * Drawback of this approach is that existing code to reset timer would be called
-    * more often (since the if condition to invoke reset timer would always succeed if
-    * timer is active).
-    */
+    uint32_t exp = 0;
+    uint64_t expiry = 0;
+    esp_err_t err;
 
-    return 0;
+    //Fetch expiry time in microseconds
+    err = esp_timer_get_expiry_time((esp_timer_handle_t)(co->handle), &expiry);
+    if (err != ESP_OK) {
+        //Error. Could not fetch the expiry time
+        return 0;
+    }
+
+    //Convert microseconds to ticks
+    npl_freertos_time_ms_to_ticks((uint32_t)(expiry / 1000), &exp);
+    return exp;
 #else
     return xTimerGetExpiryTime(co->handle);
 #endif
@@ -463,7 +468,7 @@ npl_freertos_callout_remaining_ticks(struct ble_npl_callout *co,
     uint32_t exp = 0;
 
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#if 1
     uint64_t expiry = 0;
     esp_err_t err;
 
