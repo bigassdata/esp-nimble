@@ -303,6 +303,21 @@ ble_hs_hci_evt_enc_key_refresh(uint8_t event_code, const void *data,
     return 0;
 }
 
+uint32_t ZWB_CONNECTED_HANDLES_HANDLE[3] = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+uint32_t ZWB_CONNECTED_HANDLES_ACKS[3] = {0, 0, 0};
+
+void ZWB_UPD_ACK_RX(uint16_t handle)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        if (ZWB_CONNECTED_HANDLES_HANDLE[i] == handle)
+        {
+            ZWB_CONNECTED_HANDLES_ACKS[i]++;
+            break;
+        }
+    }
+}
+
 static int
 ble_hs_hci_evt_num_completed_pkts(uint8_t event_code, const void *data,
                                   unsigned int len)
@@ -322,6 +337,7 @@ ble_hs_hci_evt_num_completed_pkts(uint8_t event_code, const void *data,
         if (num_pkts > 0) {
             ble_hs_lock();
             conn = ble_hs_conn_find(le16toh(ev->completed[i].handle));
+            ZWB_UPD_ACK_RX(le16toh(ev->completed[i].handle));
             if (conn != NULL) {
                 if (conn->bhc_outstanding_pkts < num_pkts) {
                     ble_hs_sched_reset(BLE_HS_ECONTROLLER);
