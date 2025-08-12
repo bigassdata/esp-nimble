@@ -4290,8 +4290,9 @@ ble_gattc_signed_write(uint16_t conn_handle, uint16_t attr_handle,
     /* Converting the csrk to little endian */
     swap_buf(csrk, value_sec.csrk, 16);
 
+    // Will fail: no longer supported.
     rc = ble_att_clt_tx_signed_write_cmd(conn_handle, BLE_L2CAP_CID_ATT, attr_handle,
-                                         csrk, value_sec.sign_counter, txom);
+                                         csrk, 0, txom);
     if (rc != 0) {
         goto err;
     }

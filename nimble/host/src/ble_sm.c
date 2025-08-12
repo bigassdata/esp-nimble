@@ -492,7 +492,7 @@ ble_sm_fill_store_value(const ble_addr_t *peer_addr,
 
     if (keys->csrk_valid) {
         memcpy(value_sec->csrk, keys->csrk, sizeof value_sec->csrk);
-        value_sec->sign_counter = keys->sign_counter;
+        // no sign counter update.  unsupported.
         value_sec->csrk_present = 1;
     }
 }
@@ -2671,16 +2671,12 @@ ble_sm_incr_our_sign_counter(uint16_t conn_handle)
     if (value_sec.csrk_present != 1) {
         return BLE_HS_ENOENT;
     }
-    if (value_sec.sign_counter == (uint32_t)0xffffffff) {
-        return BLE_HS_ENOMEM;
-    }
 
     rc = ble_store_delete_our_sec(&key_sec);
     if (rc != 0) {
         return rc;
     }
 
-    value_sec.sign_counter += 1;
     rc = ble_store_write_our_sec(&value_sec);
     if (rc != 0) {
         return rc;
@@ -2721,9 +2717,6 @@ ble_sm_incr_peer_sign_counter(uint16_t conn_handle)
     if (value_sec.csrk_present != 1) {
         return BLE_HS_ENOENT;
     }
-    if (value_sec.sign_counter == (uint32_t)0xffffffff) {
-        return BLE_HS_ENOMEM;
-    }
 
     rc = ble_store_delete_peer_sec(&key_sec);
     if (rc != 0) {
@@ -2736,7 +2729,6 @@ ble_sm_incr_peer_sign_counter(uint16_t conn_handle)
         // Proceed with trying to write the new sign counter
     }
 
-    value_sec.sign_counter += 1;
     rc = ble_store_write_peer_sec(&value_sec);
     if (rc != 0) {
         return rc;

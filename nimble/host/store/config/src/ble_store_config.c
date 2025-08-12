@@ -75,13 +75,6 @@ int ble_store_config_num_local_irks;
  * $sec                                                                      *
  *****************************************************************************/
 
-int ble_store_config_compare_bond_count(const void *a, const void *b) {
-    const struct ble_store_value_sec *sec_a = (const struct ble_store_value_sec *)a;
-    const struct ble_store_value_sec *sec_b = (const struct ble_store_value_sec *)b;
-
-    return sec_a->bond_count - sec_b->bond_count;
-}
-
 /* This function gets the stored device records of OUR_SEC object type, arranges them in order of their bond count,
  * and then updates them with new counts so they're in sequence.
  */
@@ -97,8 +90,6 @@ int ble_restore_our_sec_nvs(void)
 
     memcpy(temp_our_secs, ble_store_config_our_secs, ble_store_config_num_our_secs * sizeof(struct ble_store_value_sec));
     temp_count = ble_store_config_num_our_secs;
-
-    qsort(temp_our_secs, temp_count, sizeof(struct ble_store_value_sec), ble_store_config_compare_bond_count);
 
     for (int i = 0; i < temp_count; i++) {
 
@@ -143,8 +134,6 @@ int ble_restore_peer_sec_nvs(void)
 
     memcpy(temp_peer_secs, ble_store_config_peer_secs, ble_store_config_num_peer_secs * sizeof(struct ble_store_value_sec));
     temp_count = ble_store_config_num_peer_secs;
-
-    qsort(temp_peer_secs, temp_count, sizeof(struct ble_store_value_sec), ble_store_config_compare_bond_count);
 
     for (int i = 0; i < temp_count; i++) {
 
@@ -194,7 +183,7 @@ ble_store_config_print_value_sec(const struct ble_store_value_sec *sec)
     if (sec->csrk_present) {
         BLE_HS_LOG(DEBUG, "csrk=");
         ble_hs_log_flat_buf(sec->csrk, 16);
-        BLE_HS_LOG(DEBUG, " sign_counter = %u", sec->sign_counter);
+        BLE_HS_LOG(DEBUG, " sign_counter = %u", 0);
     }
 
     BLE_HS_LOG(DEBUG, "\n");
@@ -287,7 +276,7 @@ ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
 
     ble_store_config_our_secs[idx] = *value_sec;
 
-    ble_store_config_our_secs[idx].bond_count = ++ble_store_config_our_bond_count;
+    ++ble_store_config_our_bond_count;
 
     rc = ble_store_config_persist_our_secs();
     if (rc != 0) {
@@ -446,7 +435,7 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
 
     ble_store_config_peer_secs[idx] = *value_sec;
 
-    ble_store_config_peer_secs[idx].bond_count = ++ble_store_config_peer_bond_count;
+    ++ble_store_config_peer_bond_count;
 
     rc = ble_store_config_persist_peer_secs();
     if (rc != 0) {

@@ -2462,13 +2462,14 @@ ble_att_svr_rx_signed_write(uint16_t conn_handle, uint16_t cid, struct os_mbuf *
     /* Strip the signature from the end of the mbuf. */
     os_mbuf_adj(*rxom, -(BLE_ATT_SIGNED_WRITE_CMD_BASE_SZ - BLE_ATT_SIGNED_WRITE_DATA_OFFSET));
 
+    uint32_t sign_counter_fake = 0;
     /* Authentication procedure */
-    len = OS_MBUF_PKTLEN(*rxom) + sizeof(value_sec.sign_counter) + 1;
+    len = OS_MBUF_PKTLEN(*rxom) + sizeof(sign_counter_fake) + 1;
     message = nimble_platform_mem_malloc(len);
 
     message[0] = BLE_ATT_OP_SIGNED_WRITE_CMD;
     os_mbuf_copydata(*rxom, 0, OS_MBUF_PKTLEN(*rxom), &message[1]);
-    memcpy(&message[1 + OS_MBUF_PKTLEN(*rxom)], &value_sec.sign_counter, sizeof(value_sec.sign_counter));
+    memcpy(&message[1 + OS_MBUF_PKTLEN(*rxom)], &sign_counter_fake, sizeof(sign_counter_fake));
 
     /* Converting message into little endian format */
     swap_in_place(message, len);
@@ -2487,13 +2488,13 @@ ble_att_svr_rx_signed_write(uint16_t conn_handle, uint16_t cid, struct os_mbuf *
     swap_in_place(cmac, sizeof cmac);
 
     /* Comparing sign counter */
-    if(memcmp(sign, &value_sec.sign_counter, sizeof(value_sec.sign_counter)) != 0) {
+    if(memcmp(sign, &sign_counter_fake, sizeof(sign_counter_fake)) != 0) {
         rc = BLE_HS_EAUTHEN;
         goto err;
     }
 
     /* Comparing signature */
-    if(memcmp(&sign[sizeof(value_sec.sign_counter)], &cmac[sizeof(cmac) / 2], sizeof(cmac) / 2) != 0) {
+    if(memcmp(&sign[sizeof(sign_counter_fake)], &cmac[sizeof(cmac) / 2], sizeof(cmac) / 2) != 0) {
         rc = BLE_HS_EAUTHEN;
         goto err;
     }
