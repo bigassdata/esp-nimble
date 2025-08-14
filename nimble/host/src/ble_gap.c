@@ -8371,7 +8371,6 @@ ble_gap_unpair(const ble_addr_t *peer_addr)
         if (value.sec.irk_present) {
 	    /* We cannot delete entry from resolving list if there is ongoing
 	     * discovery or advertising in progress */
-            BLE_HS_LOG(ERROR, "adv %u, disc %u\n",ble_gap_adv_active(), ble_gap_disc_active());
             if (ble_gap_adv_active() ||
                 ble_gap_disc_active()) {
                 return BLE_HS_EBUSY;

@@ -2732,7 +2732,6 @@ ble_sm_incr_peer_sign_counter(uint16_t conn_handle)
         // Proceed with trying to write the new sign counter
     }
 
-    BLE_HS_LOG(ERROR, "ZWB WRITE PEER SEC...ctr vs\n");
     rc = ble_store_write_peer_sec(&value_sec);
     if (rc != 0) {
         return rc;
