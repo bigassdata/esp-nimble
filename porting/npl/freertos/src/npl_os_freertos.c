@@ -155,6 +155,7 @@ static os_membuf_t ble_freertos_mutex_buf[
 ];
 
 #endif
+extern void ZWB_HEAP_DETAIL_DUMP(unsigned int where);
 
 bool
 npl_freertos_os_started(void)
@@ -1161,18 +1162,26 @@ int npl_freertos_mempool_init(void)
     if(!ble_freertos_evq_buf) {
         goto _error;
     }
+    ZWB_HEAP_DETAIL_DUMP(211);
+
     ble_freertos_co_buf  = malloc(OS_MEMPOOL_SIZE(BLE_TOTAL_CO_COUNT, sizeof (struct ble_npl_callout_freertos)) * sizeof(os_membuf_t));
     if(!ble_freertos_co_buf) {
         goto _error;
     }
+    ZWB_HEAP_DETAIL_DUMP(212);
+
     ble_freertos_sem_buf  = malloc(OS_MEMPOOL_SIZE(BLE_TOTAL_SEM_COUNT, sizeof (struct ble_npl_sem_freertos)) * sizeof(os_membuf_t));
     if(!ble_freertos_sem_buf) {
         goto _error;
     }
+    ZWB_HEAP_DETAIL_DUMP(213);
+
     ble_freertos_mutex_buf  = malloc( OS_MEMPOOL_SIZE(BLE_TOTAL_MUTEX_COUNT, sizeof (struct ble_npl_mutex_freertos)) * sizeof(os_membuf_t));
     if(!ble_freertos_mutex_buf) {
         goto _error;
     }
+    ZWB_HEAP_DETAIL_DUMP(214);
+
 
 #endif
 

@@ -47,6 +47,7 @@ static void ble_hs_event_reset(struct ble_npl_event *ev);
 static void ble_hs_event_start_stage1(struct ble_npl_event *ev);
 static void ble_hs_event_start_stage2(struct ble_npl_event *ev);
 static void ble_hs_timer_sched(int32_t ticks_from_now);
+extern void ZWB_HEAP_DETAIL_DUMP(unsigned int where);
 
 struct os_mempool ble_hs_hci_ev_pool;
 static os_membuf_t ble_hs_hci_os_event_buf[
@@ -779,6 +780,8 @@ ble_hs_init(void)
     rc = os_mempool_init(&ble_hs_hci_ev_pool, BLE_HS_HCI_EVT_COUNT,
                          sizeof (struct ble_npl_event), ble_hs_hci_os_event_buf,
                          "ble_hs_hci_ev_pool");
+    ZWB_HEAP_DETAIL_DUMP(271);
+    
     SYSINIT_PANIC_ASSERT(rc == 0);
 
     /* These get initialized here to allow unit tests to run without a zeroed
@@ -791,17 +794,23 @@ ble_hs_init(void)
 #if MYNEWT_VAL(BLE_GATTS)
     ble_npl_event_init(&ble_hs_ev_tx_notifications, ble_hs_event_tx_notify,
                        NULL);
+    ZWB_HEAP_DETAIL_DUMP(272);
 #endif
 #endif
     ble_npl_event_init(&ble_hs_ev_reset, ble_hs_event_reset, NULL);
+    ZWB_HEAP_DETAIL_DUMP(273);
     ble_npl_event_init(&ble_hs_ev_start_stage1, ble_hs_event_start_stage1,
                        NULL);
+    ZWB_HEAP_DETAIL_DUMP(274);
     ble_npl_event_init(&ble_hs_ev_start_stage2, ble_hs_event_start_stage2,
                        NULL);
+    ZWB_HEAP_DETAIL_DUMP(275);
 
     ble_hs_hci_init();
+    ZWB_HEAP_DETAIL_DUMP(276);
 
     rc = ble_hs_conn_init();
+    ZWB_HEAP_DETAIL_DUMP(277);
     SYSINIT_PANIC_ASSERT(rc == 0);
 
 #if MYNEWT_VAL(BLE_PERIODIC_ADV)
@@ -813,22 +822,27 @@ ble_hs_init(void)
 #if NIMBLE_BLE_CONNECT
     rc = ble_l2cap_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(278);
 #endif
 
     rc = ble_gap_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(279);
 
 #if NIMBLE_BLE_CONNECT
     rc = ble_att_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(270);
 
 #if MYNEWT_VAL(BLE_GATTS)
     rc = ble_att_svr_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(271);
 #endif
 
     rc = ble_gattc_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(272);
 
 #if MYNEWT_VAL(BLE_GATT_CACHING)
     rc = ble_gattc_cache_conn_init();
@@ -838,20 +852,25 @@ ble_hs_init(void)
 #if MYNEWT_VAL(BLE_GATTS)
     rc = ble_gatts_init();
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(273);
 #endif
 #endif
 
     ble_hs_stop_init();
+    ZWB_HEAP_DETAIL_DUMP(274);
 
     ble_mqueue_init(&ble_hs_rx_q, ble_hs_event_rx_data, NULL);
+    ZWB_HEAP_DETAIL_DUMP(275);
 
     rc = stats_init_and_reg(
         STATS_HDR(ble_hs_stats), STATS_SIZE_INIT_PARMS(ble_hs_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_hs_stats), "ble_hs");
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(276);
 
     rc = ble_npl_mutex_init(&ble_hs_mutex);
     SYSINIT_PANIC_ASSERT(rc == 0);
+    ZWB_HEAP_DETAIL_DUMP(277);
 
 #if MYNEWT_VAL(BLE_HS_DEBUG)
     ble_hs_dbg_mutex_locked = 0;
@@ -862,6 +881,7 @@ ble_hs_init(void)
 #else
     ble_hs_evq_set(nimble_port_get_dflt_eventq());
 #endif
+    ZWB_HEAP_DETAIL_DUMP(278);
 
     /* Enqueue the start event to the default event queue.  Using the default
      * queue ensures the event won't run until the end of main().  This allows
@@ -873,6 +893,7 @@ ble_hs_init(void)
                        &ble_hs_ev_start_stage1);
 #else
     ble_npl_eventq_put(nimble_port_get_dflt_eventq(), &ble_hs_ev_start_stage1);
+    ZWB_HEAP_DETAIL_DUMP(279);
 #endif
 #endif
     /* Initialize npl variables related to hs flow control */

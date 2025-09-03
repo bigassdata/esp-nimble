@@ -50,6 +50,7 @@
 #include "bt_common.h"
 
 #define NIMBLE_PORT_LOG_TAG          "BLE_INIT"
+extern void ZWB_HEAP_DETAIL_DUMP(unsigned int where);
 
 extern void os_msys_init(void);
 
@@ -95,8 +96,10 @@ esp_err_t esp_nimble_init(void)
 #if !SOC_ESP_NIMBLE_CONTROLLER || !CONFIG_BT_CONTROLLER_ENABLED
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
+    ZWB_HEAP_DETAIL_DUMP(210);
 
     npl_freertos_mempool_init();
+    ZWB_HEAP_DETAIL_DUMP(220);
 
 #if CONFIG_BT_CONTROLLER_ENABLED
     if(esp_nimble_hci_init() != ESP_OK) {
@@ -114,18 +117,30 @@ esp_err_t esp_nimble_init(void)
     ble_adv_list_init();
 #endif
 #endif
+    ZWB_HEAP_DETAIL_DUMP(230);
+
 
     /* Initialize default event queue */
     ble_npl_eventq_init(&g_eventq_dflt);
+    ZWB_HEAP_DETAIL_DUMP(240);
+
     /* Initialize the global memory pool */
     os_mempool_module_init();
+    ZWB_HEAP_DETAIL_DUMP(250);
+
     os_msys_init();
+    ZWB_HEAP_DETAIL_DUMP(260);
+
 
 #endif
 
     ble_transport_ll_init();
+    ZWB_HEAP_DETAIL_DUMP(270);
+
     /* Initialize the host */
     ble_transport_hs_init();
+    ZWB_HEAP_DETAIL_DUMP(280);
+
 
     return ESP_OK;
 }
@@ -166,6 +181,7 @@ esp_err_t esp_nimble_deinit(void)
     return ESP_OK;
 }
 
+
 /**
  * @brief nimble_port_init - Initialize controller and NimBLE host stack
  *
@@ -178,6 +194,7 @@ nimble_port_init(void)
 
 #if CONFIG_IDF_TARGET_ESP32 && CONFIG_BT_CONTROLLER_ENABLED
     esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+    ZWB_HEAP_DETAIL_DUMP(0);
 #endif
 #if CONFIG_BT_CONTROLLER_ENABLED
     esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -187,6 +204,7 @@ nimble_port_init(void)
         ESP_LOGE(NIMBLE_PORT_LOG_TAG, "controller init failed\n");
         return ret;
     }
+    ZWB_HEAP_DETAIL_DUMP(100);
 
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
     if (ret != ESP_OK) {
@@ -198,6 +216,7 @@ nimble_port_init(void)
         ESP_LOGE(NIMBLE_PORT_LOG_TAG, "controller enable failed\n");
         return ret;
     }
+    ZWB_HEAP_DETAIL_DUMP(200);
 #endif
 
     ret = esp_nimble_init();
@@ -217,6 +236,8 @@ nimble_port_init(void)
 	ESP_LOGE(NIMBLE_PORT_LOG_TAG, "nimble host init failed\n");
         return ret;
     }
+    ZWB_HEAP_DETAIL_DUMP(300);
+
 
 #if MYNEWT_VAL(BT_HCI_LOG_INCLUDED)
     bt_hci_log_init();
