@@ -28,6 +28,8 @@
 #ifdef ESP_PLATFORM
 #include "esp_log.h"
 #endif
+extern void ZWB_HEAP_DETAIL_DUMP(unsigned int where);
+
 
 static struct ble_npl_eventq g_eventq_dflt;
 static struct ble_hs_stop_listener stop_listener;
@@ -38,16 +40,23 @@ void
 nimble_port_init(void)
 {
     void os_msys_init(void);
+    ZWB_HEAP_DETAIL_DUMP(260);
     void ble_store_ram_init(void);
+    ZWB_HEAP_DETAIL_DUMP(270);
 #if NIMBLE_CFG_CONTROLLER
     void ble_hci_ram_init(void);
 #endif
     /* Initialize default event queue */
     ble_npl_eventq_init(&g_eventq_dflt);
+    ZWB_HEAP_DETAIL_DUMP(240);
+
 
     os_msys_init();
+    ZWB_HEAP_DETAIL_DUMP(260);
+
 
     ble_hs_init();
+    ZWB_HEAP_DETAIL_DUMP(280);
 
     /* XXX Need to have template for store */
     ble_store_ram_init();

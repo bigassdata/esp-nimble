@@ -27,6 +27,7 @@
 portMUX_TYPE ble_port_mutex = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "Timer";
+extern void ZWB_HEAP_DETAIL_DUMP(unsigned int where);
 
 static inline bool
 in_isr(void)
