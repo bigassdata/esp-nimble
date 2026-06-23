@@ -554,6 +554,7 @@ static int
 ble_nvs_restore_sec_keys(void)
 {
     esp_err_t err;
+    int flag = 0;
     extern uint16_t ble_store_config_our_bond_count;
     extern uint16_t ble_store_config_peer_bond_count;
     extern int ble_store_config_compare_bond_count(const void *a, const void *b);
@@ -691,8 +692,7 @@ int ble_store_config_persist_cccds(void)
 
 #if MYNEWT_VAL(BLE_STORE_MAX_CSFCS)
 int ble_store_config_persist_csfcs(void)
-{    
-    ESP_LOGI(TAG, "call ble_store_config_persist_csfcs()");
+{
     return 0;
 }
 #endif
@@ -705,7 +705,7 @@ int ble_store_config_persist_eads(void)
 }
 #endif
 int ble_store_config_persist_local_irk(void)
-{    
+{
     ESP_LOGI(TAG, "call ble_store_config_persist_local_irk()");
     return 0;
 }
@@ -728,6 +728,7 @@ int ble_store_config_persist_peer_secs(void)
         return BLE_HS_ESTORE_FAIL;
     }
 
+    ESP_LOGI(TAG, "NVS count = %d, RAM count = %d for peer sec", nvs_count, ble_store_config_num_peer_secs);
     if (nvs_count < ble_store_config_num_peer_secs) {
 
         /* NVS db count less than RAM count, write operation */
@@ -759,6 +760,7 @@ int ble_store_config_persist_our_secs(void)
         return BLE_HS_ESTORE_FAIL;
     }
 
+    ESP_LOGI(TAG, "NVS count = %d, RAM count = %d for our sec", nvs_count, ble_store_config_num_our_secs);
     if (nvs_count < ble_store_config_num_our_secs) {
 
         /* NVS db count less than RAM count, write operation */

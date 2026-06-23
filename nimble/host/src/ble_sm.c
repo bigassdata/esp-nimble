@@ -542,6 +542,7 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
 
     /* If we got an identity address, use that for key storage. */
     if (proc->peer_keys.addr_valid) {
+        BLE_HS_LOG(INFO, "using identity address for key storage; ");
         peer_addr.type = proc->peer_keys.addr_type;
         memcpy(peer_addr.val, proc->peer_keys.addr, sizeof peer_addr.val);
 
@@ -577,7 +578,9 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
             struct ble_hs_dev_records *p_dev_rec =
                                       ble_rpa_find_peer_dev_rec(conn->bhc_peer_rpa_addr.val);
             if (p_dev_rec == NULL) {
+                BLE_HS_LOG(INFO, "adding peer device record for RPA; ");
                 if (!ble_rpa_resolv_add_peer_rec(conn->bhc_peer_rpa_addr.val)) {
+                    BLE_HS_LOG(ERROR, "failed to add peer device record for RPA; ");
                     p_dev_rec = ble_rpa_find_peer_dev_rec(conn->bhc_peer_rpa_addr.val);
                 }
             }
@@ -589,6 +592,7 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
                 memcpy(p_dev_rec->peer_sec.peer_addr.val,
                        proc->peer_keys.addr, 6);
                 p_dev_rec->peer_sec.peer_addr.type = proc->peer_keys.addr_type;
+                BLE_HS_LOG(INFO, "persisting peer device records for RPA; ");
 
                 ble_store_persist_peer_records();
             }
@@ -610,16 +614,17 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
     authenticated = proc->flags & BLE_SM_PROC_F_AUTHENTICATED;
     sc = proc->flags & BLE_SM_PROC_F_SC;
 
+
     ble_sm_fill_store_value(&peer_addr, authenticated, sc, &proc->our_keys,
                             &value_sec);
-    ble_store_write_our_sec(&value_sec);
+    int err = ble_store_write_our_sec(&value_sec);
+    BLE_HS_LOG(ERROR, "ZWB WRITE OUR SEC %d\n", err);
 
     ble_sm_fill_store_value(&peer_addr, authenticated, sc, &proc->peer_keys,
                             &value_sec);
+    err = ble_store_write_peer_sec(&value_sec);
+    BLE_HS_LOG(ERROR, "ZWB WRITE PEER SEC %d\n", err);
 
-    BLE_HS_LOG(ERROR, "ZWB WRITE PEER SEC\n");
-
-    ble_store_write_peer_sec(&value_sec);
 
     value_rpa_rec.peer_addr.type = peer_addr.type;
     memcpy(value_rpa_rec.peer_addr.val, peer_addr.val, sizeof peer_addr.val);
@@ -627,7 +632,8 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
     value_rpa_rec.peer_rpa_addr.type = conn->bhc_peer_rpa_addr.type;
     memcpy(value_rpa_rec.peer_rpa_addr.val, conn->bhc_peer_rpa_addr.val, sizeof conn->bhc_peer_rpa_addr.val);
 
-    ble_store_write_rpa_rec(&value_rpa_rec);
+    err = ble_store_write_rpa_rec(&value_rpa_rec);
+    BLE_HS_LOG(ERROR, "ZWB WRITE RPA REC %d\n", err);
 }
 
 static int
@@ -923,10 +929,13 @@ ble_sm_chk_repeat_pairing(uint16_t conn_handle,
         rc = ble_sm_read_bond(conn_handle, &bond);
         switch (rc) {
         case 0:
+            BLE_HS_LOG(ERROR, "FOUND A BOND\n");
             break;
         case BLE_HS_ENOENT:
+            BLE_HS_LOG(ERROR, "NO BOND FOUND\n");            
             return 0;
         default:
+            BLE_HS_LOG(ERROR, "ERROR READING BOND: %d\n", rc);
             return rc;
         }
 
@@ -1032,6 +1041,7 @@ ble_sm_process_result(uint16_t conn_handle, struct ble_sm_result *res,
             rm                      &&
             proc->flags & BLE_SM_PROC_F_BONDING) {
 
+            BLE_HS_LOG(INFO, "persisting keys");
             ble_sm_persist_keys(proc);
         }
 
@@ -1682,14 +1692,17 @@ ble_sm_pair_cfg(struct ble_sm_proc *proc)
 
     ble_sm_key_dist(proc, &init_key_dist, &resp_key_dist);
     if (proc->flags & BLE_SM_PROC_F_INITIATOR) {
+        BLE_HS_LOG(INFO, "I am initiator!\n");
         rx_key_dist = resp_key_dist;
     } else {
+        BLE_HS_LOG(INFO, "I am responder!\n");
         rx_key_dist = init_key_dist;
     }
 
     if (pair_req->authreq & BLE_SM_PAIR_AUTHREQ_BOND &&
         pair_rsp->authreq & BLE_SM_PAIR_AUTHREQ_BOND) {
 
+        BLE_HS_LOG(INFO, "bonding enabled\n");
         proc->flags |= BLE_SM_PROC_F_BONDING;
     }
 
@@ -1870,6 +1883,8 @@ ble_sm_pair_req_rx(uint16_t conn_handle, struct os_mbuf **om,
 
     req = (struct ble_sm_pair_cmd *)(*om)->om_data;
 
+    BLE_HS_LOG(INFO, "==== pair req\n");
+
     ble_hs_lock();
 
     /* XXX: Check connection state; reject if not appropriate. */
@@ -1886,6 +1901,8 @@ ble_sm_pair_req_rx(uint16_t conn_handle, struct os_mbuf **om,
             res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_UNSPECIFIED);
             res->out_of_order = 1;
             ble_hs_unlock();
+            BLE_HS_LOG(INFO, "==== bad state\n");
+
             return;
         }
 
@@ -1907,6 +1924,7 @@ ble_sm_pair_req_rx(uint16_t conn_handle, struct os_mbuf **om,
     if (rc != 0) {
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         res->app_status = rc;
+        BLE_HS_LOG(INFO, "==== store overflow\n");
         return;
     }
 
@@ -1956,6 +1974,7 @@ ble_sm_pair_req_rx(uint16_t conn_handle, struct os_mbuf **om,
              * are already bonded to this peer).  In that case, we include the
              * information in a notification to the app.
              */
+            BLE_HS_LOG(INFO, "==== pair request seems ok\n");
             ble_sm_pair_rsp_fill(proc);
             ble_sm_pair_cfg(proc);
 
@@ -1970,6 +1989,7 @@ ble_sm_pair_req_rx(uint16_t conn_handle, struct os_mbuf **om,
     /* Check if we are already bonded to this peer.  If so, give the
      * application an opportunity to delete the old bond.
      */
+    BLE_HS_LOG(INFO, "==== pair status = %d\n", res->app_status);
     if (res->app_status == 0) {
         rc = ble_sm_chk_repeat_pairing(conn_handle, proc_flags, key_size);
         if (rc != 0) {
@@ -1988,6 +2008,8 @@ ble_sm_pair_rsp_rx(uint16_t conn_handle, struct os_mbuf **om,
     struct ble_sm_proc *proc;
     uint8_t ioact;
     int rc;
+
+    BLE_HS_LOG(INFO, "==== pair rsp??\n");
 
     res->app_status = ble_hs_mbuf_pullup_base(om, sizeof(*rsp));
     if (res->app_status != 0) {
@@ -2045,6 +2067,9 @@ ble_sm_pair_rsp_rx(uint16_t conn_handle, struct os_mbuf **om,
         res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_UNSPECIFIED);
         res->out_of_order = 1;
     }
+
+    BLE_HS_LOG(INFO, "==== pair rsp. err=%d, app_status=%d\n", res->sm_err, res->app_status);
+
 
     ble_hs_unlock();
 }
@@ -2121,6 +2146,7 @@ ble_sm_sec_req_rx(uint16_t conn_handle, struct os_mbuf **om,
          * LTK corresponding to the sender.
          */
         if (cmd->authreq & BLE_SM_PAIR_AUTHREQ_BOND) {
+            BLE_HS_LOG(INFO, "==== PEER_SEC, sec req\n");
             res->app_status = ble_store_read_peer_sec(&key_sec, &value_sec);
         } else {
             res->app_status = BLE_HS_ENOENT;
@@ -2713,6 +2739,7 @@ ble_sm_incr_peer_sign_counter(uint16_t conn_handle)
     memset(&key_sec, 0, sizeof key_sec);
     key_sec.peer_addr = desc.peer_id_addr;
 
+    BLE_HS_LOG(INFO, "==== PEER_SEC, sign cnt\n");
     rc = ble_store_read_peer_sec(&key_sec, &value_sec);
     if (rc != 0) {
         return rc;

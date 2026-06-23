@@ -46,3 +46,15 @@ ble_hs_log_flat_buf(const void *data, int len)
         BLE_HS_LOG(DEBUG, "0x%02x ", u8ptr[i]);
     }
 }
+
+void
+ble_hs_log_flat_buf_info(const void *data, int len)
+{
+    const uint8_t *u8ptr;
+    int i;
+
+    u8ptr = data;
+    for (i = 0; i < len; i++) {
+        BLE_HS_LOG(INFO, "0x%02x ", u8ptr[i]);
+    }
+}
