@@ -441,7 +441,7 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
     int idx;
     int rc;
 
-    BLE_HS_LOG(DEBUG, "persisting peer sec; ");
+    BLE_HS_LOG(INFO, "persisting peer sec; ");
     ble_store_config_print_value_sec(value_sec);
 
     ble_store_key_from_value_sec(&key_sec, value_sec);
@@ -449,7 +449,7 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
                                  ble_store_config_num_peer_secs);
     if (idx == -1) {
         if (ble_store_config_num_peer_secs >= MYNEWT_VAL(BLE_STORE_MAX_BONDS)) {
-            BLE_HS_LOG(DEBUG, "error persisting peer sec; too many entries "
+            BLE_HS_LOG(INFO, "error persisting peer sec; too many entries "
                              "(%d)\n", ble_store_config_num_peer_secs);
             return BLE_HS_ESTORE_CAP;
         }
