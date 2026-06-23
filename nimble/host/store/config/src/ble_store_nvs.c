@@ -554,7 +554,6 @@ static int
 ble_nvs_restore_sec_keys(void)
 {
     esp_err_t err;
-    int flag = 0;
     extern uint16_t ble_store_config_our_bond_count;
     extern uint16_t ble_store_config_peer_bond_count;
     extern int ble_store_config_compare_bond_count(const void *a, const void *b);
@@ -693,6 +692,7 @@ int ble_store_config_persist_cccds(void)
 #if MYNEWT_VAL(BLE_STORE_MAX_CSFCS)
 int ble_store_config_persist_csfcs(void)
 {
+    ESP_LOGI(TAG, "call ble_store_config_persist_csfcs()");
     return 0;
 }
 #endif

@@ -96,7 +96,6 @@ void ble_hs_log_mbuf(const struct os_mbuf *om);
  * @param len           Length of the buffer.
  */
 void ble_hs_log_flat_buf(const void *data, int len);
-void ble_hs_log_flat_buf_info(const void *data, int len);
 
 #ifdef __cplusplus
 }
