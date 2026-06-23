@@ -292,7 +292,7 @@ ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
                 return rc;
             }
 
-            // Now the changed entry lives at the front.
+            // Now the changed entry will be treated like a new entry.
             idx = ble_store_config_num_our_secs;
             ble_store_config_num_our_secs++;
         }
@@ -468,7 +468,7 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
                 return rc;
             }
 
-            // Now the changed entry lives at the front.
+            // Now the changed entry will be treated like a new entry.
             idx = ble_store_config_num_peer_secs;
             ble_store_config_num_peer_secs++;
         }
