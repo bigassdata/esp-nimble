@@ -71,6 +71,14 @@ struct ble_store_value_local_irk
     ble_store_config_local_irks[MYNEWT_VAL(BLE_STORE_MAX_BONDS)];
 int ble_store_config_num_local_irks;
 
+// A few forward declarations to avoid reordering the functions in this file.
+static int
+ble_store_config_delete_our_sec(const struct ble_store_key_sec *key_sec);
+
+static int
+ble_store_config_delete_peer_sec(const struct ble_store_key_sec *key_sec);
+
+
 /*****************************************************************************
  * $sec                                                                      *
  *****************************************************************************/
@@ -210,6 +218,7 @@ ble_store_config_find_sec(const struct ble_store_key_sec *key_sec,
     const struct ble_store_value_sec *cur;
     int i;
 
+
     if (!ble_addr_cmp(&key_sec->peer_addr, BLE_ADDR_ANY)) {
         if (key_sec->idx < num_value_secs) {
             return key_sec->idx;
@@ -248,7 +257,6 @@ ble_store_config_read_our_sec(const struct ble_store_key_sec *key_sec,
 #endif
 }
 
-
 static int
 ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
 {
@@ -257,7 +265,7 @@ ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
     int idx;
     int rc;
 
-    BLE_HS_LOG(DEBUG, "persisting our sec; ");
+    BLE_HS_LOG(INFO, "persisting our sec; ");
     ble_store_config_print_value_sec(value_sec);
 
     ble_store_key_from_value_sec(&key_sec, value_sec);
@@ -265,7 +273,7 @@ ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
                                     ble_store_config_num_our_secs);
     if (idx == -1) {
         if (ble_store_config_num_our_secs >= MYNEWT_VAL(BLE_STORE_MAX_BONDS)) {
-            BLE_HS_LOG(DEBUG, "error persisting our sec; too many entries "
+            BLE_HS_LOG(INFO, "error persisting our sec; too many entries "
                               "(%d)\n", ble_store_config_num_our_secs);
             return BLE_HS_ESTORE_CAP;
         }
@@ -273,6 +281,23 @@ ble_store_config_write_our_sec(const struct ble_store_value_sec *value_sec)
         idx = ble_store_config_num_our_secs;
         ble_store_config_num_our_secs++;
     }
+    else
+    {
+        // If the entry exists already, and the contents have changed, the old value must be removed.
+        if (memcmp(&ble_store_config_our_secs[idx], value_sec, sizeof(struct ble_store_value_sec))) {
+            BLE_HS_LOG(INFO, "our sec entry exists already, deleting old value");
+            rc = ble_store_config_delete_our_sec(&key_sec);
+            if (rc != 0) {
+                BLE_HS_LOG(ERROR, "ble_store_config_delete_our_sec; rc=%d\n", rc);
+                return rc;
+            }
+
+            // Now the changed entry will be treated like a new entry.
+            idx = ble_store_config_num_our_secs;
+            ble_store_config_num_our_secs++;
+        }
+    }
+
 
     ble_store_config_our_secs[idx] = *value_sec;
 
@@ -416,7 +441,7 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
     int idx;
     int rc;
 
-    BLE_HS_LOG(DEBUG, "persisting peer sec; ");
+    BLE_HS_LOG(INFO, "persisting peer sec; ");
     ble_store_config_print_value_sec(value_sec);
 
     ble_store_key_from_value_sec(&key_sec, value_sec);
@@ -424,13 +449,29 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
                                  ble_store_config_num_peer_secs);
     if (idx == -1) {
         if (ble_store_config_num_peer_secs >= MYNEWT_VAL(BLE_STORE_MAX_BONDS)) {
-            BLE_HS_LOG(DEBUG, "error persisting peer sec; too many entries "
+            BLE_HS_LOG(INFO, "error persisting peer sec; too many entries "
                              "(%d)\n", ble_store_config_num_peer_secs);
             return BLE_HS_ESTORE_CAP;
         }
 
         idx = ble_store_config_num_peer_secs;
         ble_store_config_num_peer_secs++;
+    }
+    else
+    {
+        // If the entry exists already, and the contents have changed, the old value must be removed.
+        if (memcmp(&ble_store_config_peer_secs[idx], value_sec, sizeof(struct ble_store_value_sec))) {
+            BLE_HS_LOG(INFO, "peer sec entry exists already, deleting old value");
+            rc = ble_store_config_delete_peer_sec(&key_sec);
+            if (rc != 0) {
+                BLE_HS_LOG(ERROR, "ble_store_config_delete_peer_sec; rc=%d\n", rc);
+                return rc;
+            }
+
+            // Now the changed entry will be treated like a new entry.
+            idx = ble_store_config_num_peer_secs;
+            ble_store_config_num_peer_secs++;
+        }
     }
 
     ble_store_config_peer_secs[idx] = *value_sec;
@@ -439,12 +480,14 @@ ble_store_config_write_peer_sec(const struct ble_store_value_sec *value_sec)
 
     rc = ble_store_config_persist_peer_secs();
     if (rc != 0) {
+        BLE_HS_LOG(ERROR, "ble_store_config_write_peer_sec; rc=%d\n", rc);
         return rc;
     }
 
     if (ble_store_config_peer_bond_count > (UINT16_MAX - 5)) {
         rc = ble_restore_peer_sec_nvs();
         if (rc != 0) {
+            BLE_HS_LOG(ERROR, "ble_restore_peer_sec_nvs; rc=%d\n", rc);
             return rc;
         }
     }

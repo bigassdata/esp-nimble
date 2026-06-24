@@ -64,6 +64,7 @@ ble_store_write(int obj_type, const union ble_store_value *val)
              */
             rc = ble_store_overflow_event(obj_type, val);
             if (rc != 0) {
+                BLE_HS_LOG(ERROR, "ble_store_overflow_event() returns %d\n", rc);
                 return rc;
             }
 
@@ -230,6 +231,7 @@ ble_store_write_peer_sec(const struct ble_store_value_sec *value_sec)
 
     rc = ble_store_persist_sec(BLE_STORE_OBJ_TYPE_PEER_SEC, value_sec);
     if (rc != 0) {
+        BLE_HS_LOG(ERROR, "ble_store_persist_sec() returns %d\n", rc);
         return rc;
     }
 

@@ -612,14 +612,14 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
 
     ble_sm_fill_store_value(&peer_addr, authenticated, sc, &proc->our_keys,
                             &value_sec);
-    ble_store_write_our_sec(&value_sec);
+    int err = ble_store_write_our_sec(&value_sec);
+    BLE_HS_LOG(INFO, "ble_store_write_our_sec() returns %d\n", err);
 
     ble_sm_fill_store_value(&peer_addr, authenticated, sc, &proc->peer_keys,
                             &value_sec);
+    err = ble_store_write_peer_sec(&value_sec);
+    BLE_HS_LOG(INFO, "ble_store_write_peer_sec() returns %d\n", err);
 
-    BLE_HS_LOG(ERROR, "ZWB WRITE PEER SEC\n");
-
-    ble_store_write_peer_sec(&value_sec);
 
     value_rpa_rec.peer_addr.type = peer_addr.type;
     memcpy(value_rpa_rec.peer_addr.val, peer_addr.val, sizeof peer_addr.val);
@@ -627,7 +627,8 @@ ble_sm_persist_keys(struct ble_sm_proc *proc)
     value_rpa_rec.peer_rpa_addr.type = conn->bhc_peer_rpa_addr.type;
     memcpy(value_rpa_rec.peer_rpa_addr.val, conn->bhc_peer_rpa_addr.val, sizeof conn->bhc_peer_rpa_addr.val);
 
-    ble_store_write_rpa_rec(&value_rpa_rec);
+    err = ble_store_write_rpa_rec(&value_rpa_rec);
+    BLE_HS_LOG(INFO, "ble_store_write_rpa_rec() returns %d\n", err);
 }
 
 static int
